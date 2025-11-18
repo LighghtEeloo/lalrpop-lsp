@@ -33,6 +33,7 @@ import {
 } from "vscode-languageclient/node";
 
 import { exec, spawn } from 'child_process';
+import which = require("which");
 
 let client: LanguageClient;
 // type a = Parameters<>;
@@ -92,10 +93,12 @@ export function deactivate(): Thenable<void> | undefined {
 
 function isLanguageServerInstalled(command): Promise<boolean> {
   return new Promise((resolve) => {
-    exec(`command -v ${command}`, (error) => {
-      // If the command is not found, the error code is 127
-      resolve(!error);
-    });
+    which(command).then((path)=>{
+      window.showInformationMessage(`Found ${path} for ${command}`)
+      resolve(true)
+    }).catch(()=>{
+      resolve(false)
+    })
   });
 }
 

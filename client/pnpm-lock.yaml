@@ -14,6 +14,9 @@ importers:
       '@types/vscode':
         specifier: 1.86.0
         version: 1.86.0
+      '@types/which':
+        specifier: 3.0.4
+        version: 3.0.4
       '@vscode/test-electron':
         specifier: ^2.4.1
         version: 2.4.1
@@ -25,6 +28,9 @@ packages:
 
   '@types/vscode@1.86.0':
     resolution: {integrity: sha512-DnIXf2ftWv+9LWOB5OJeIeaLigLHF7fdXF6atfc7X5g2w/wVZBgk0amP7b+ub5xAuW1q7qP5YcFvOcit/DtyCQ==}
+
+  '@types/which@3.0.4':
+    resolution: {integrity: sha512-liyfuo/106JdlgSchJzXEQCVArk0CvevqPote8F8HgWgJ3dRCcTHgJIsLDuee0kxk/mhbInzIZk3QWSZJ8R+2w==}
 
   '@vscode/test-electron@2.4.1':
     resolution: {integrity: sha512-Gc6EdaLANdktQ1t+zozoBVRynfIsMKMc94Svu1QreOBC8y76x4tvaK32TljrLi1LI2+PK58sDVbL7ALdqf3VRQ==}
@@ -201,6 +207,8 @@ snapshots:
       undici-types: 6.20.0
 
   '@types/vscode@1.86.0': {}
+
+  '@types/which@3.0.4': {}
 
   '@vscode/test-electron@2.4.1':
     dependencies:
