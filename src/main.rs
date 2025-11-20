@@ -42,10 +42,7 @@ impl LalrpopLsp {
         let uri = params.uri.to_string();
         let file = match LalrpopFile::new(params.text.as_str()) {
             Ok(file) => file,
-            Err(DiagnosticError {
-                loc,
-                message,
-            }) => {
+            Err(DiagnosticError { loc, message }) => {
                 let range = {
                     let (lo, hi) = match loc {
                         lalrpop::lsp::ErrorLoc::Point(line, col) => ((line, col), (line, col + 1)),
