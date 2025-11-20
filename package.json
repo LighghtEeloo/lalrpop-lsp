@@ -3,7 +3,7 @@
   "displayName": "LALRPOP Language Server",
   "description": "LSP support for LALRPOP",
   "license": "MIT",
-  "version": "0.0.9",
+  "version": "0.0.10",
   "keywords": [
     "LALRPOP",
     "language-server",
@@ -18,7 +18,7 @@
     "Programming Languages"
   ],
   "engines": {
-    "vscode": "^1.66.0"
+    "vscode": "^1.86.0"
   },
   "enabledApiProposals": [],
   "activationEvents": [
@@ -105,7 +105,7 @@
   },
   "dependencies": {
     "vscode-languageclient": "9.0.1",
-    "which": "5.0.0"
+    "which": "6.0.0"
   },
   "packageManager": "pnpm@9.13.2+sha512.88c9c3864450350e65a33587ab801acf946d7c814ed1134da4a924f6df5a2120fd36b46aab68f7cd1d413149112d53c7db3a4136624cfd00ff1846a0c6cef48a"
 }

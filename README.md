@@ -27,17 +27,13 @@ adding this line  to your `settings.json`
 - [ ] Code completion
 -->
 
-- Go to Definition
-    ![Go to Definition](https://github.com/user-attachments/assets/e20bfdf5-6e0d-4d97-99fc-4ab06db0ddd2)
+- [Go to Definition](https://github.com/user-attachments/assets/e20bfdf5-6e0d-4d97-99fc-4ab06db0ddd2)
 
-- Find References
-    ![Find References](https://github.com/user-attachments/assets/978cc716-eae6-48d6-828c-7f273982a4aa)
+- [Find References](https://github.com/user-attachments/assets/978cc716-eae6-48d6-828c-7f273982a4aa)
 
-- Hover
-    ![Hover](https://github.com/user-attachments/assets/38055a83-8d9d-489a-ace9-979337a635ac)
+- [Hover](https://github.com/user-attachments/assets/38055a83-8d9d-489a-ace9-979337a635ac)
 
-- Error Diagnostics
-    ![Error Diagnostics](https://github.com/user-attachments/assets/6f1ca1e4-d51e-4245-a8e9-f5e6b3ce68a0)
+- [Error Diagnostics](https://github.com/user-attachments/assets/6f1ca1e4-d51e-4245-a8e9-f5e6b3ce68a0)
 
 
 ## Development using VSCode

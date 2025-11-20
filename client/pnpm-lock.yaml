@@ -12,10 +12,10 @@ importers:
         specifier: ^22.10.1
         version: 22.10.1
       '@types/vscode':
-        specifier: 1.86.0
+        specifier: ^1.86.0
         version: 1.86.0
       '@types/which':
-        specifier: 3.0.4
+        specifier: ^3.0.4
         version: 3.0.4
       '@vscode/test-electron':
         specifier: ^2.4.1
