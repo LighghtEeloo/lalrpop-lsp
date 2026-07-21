@@ -1,0 +1,40 @@
+==================
+Symbol before a binding
+==================
+
+grammar;
+
+Sequence<Start, T>: Vec<T> = Start <mut values:T*> => values;
+
+---
+
+(source_file
+  (grammar
+    (grammar_item
+      (nonterminal
+        (nonterminal_name
+          (macro_id)
+          (identifier)
+          (identifier))
+        (type_ref
+          (parametrized_type
+            (path
+              (identifier))
+            (type_ref
+              (parametrized_type
+                (path
+                  (identifier))))))
+        (alternative
+          (symbol
+            (bare_symbol
+              (identifier)))
+          (symbol
+            (binding_symbol
+              (mut)
+              name: (identifier)
+              item: (bare_symbol
+                (bare_symbol
+                  (identifier))
+                (repeat))))
+          (action
+            (normal_action)))))))
