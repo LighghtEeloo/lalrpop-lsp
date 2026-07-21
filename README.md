@@ -63,6 +63,7 @@ in Zed's `settings.json`:
 - Document symbols
 - Syntax error diagnostics
 - Syntax highlighting in both editors
+- Semantic highlighting for nonterminal and macro definitions and references
 
 ## Development
 

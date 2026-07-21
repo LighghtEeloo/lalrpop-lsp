@@ -1,3 +1,5 @@
+mod semantic_tokens;
+
 use lalrpop::lsp::{DiagnosticError, LalrpopFile, SpanItem, TypeDecl};
 use tower_lsp::{LspService, Server};
 
@@ -18,7 +20,12 @@ pub struct TextDocumentSyncItem {
 /// LALRPOP Language Server Protocol
 pub struct LalrpopLsp {
     client: Client,
-    files: DashMap<String, LalrpopFile>,
+    files: DashMap<String, ParsedDocument>,
+}
+
+struct ParsedDocument {
+    text: String,
+    file: LalrpopFile,
 }
 
 impl LalrpopLsp {
@@ -43,6 +50,7 @@ impl LalrpopLsp {
         let file = match LalrpopFile::new(params.text.as_str()) {
             Ok(file) => file,
             Err(DiagnosticError { loc, message }) => {
+                self.files.remove(&uri);
                 let range = {
                     let (lo, hi) = match loc {
                         lalrpop::lsp::ErrorLoc::Point(line, col) => ((line, col), (line, col + 1)),
@@ -96,7 +104,13 @@ impl LalrpopLsp {
         //     .await;
 
         // update
-        self.files.insert(uri.clone(), file);
+        self.files.insert(
+            uri.clone(),
+            ParsedDocument {
+                text: params.text,
+                file,
+            },
+        );
         // refresh diagnostics
         self.client
             .publish_diagnostics(params.uri, vec![], Some(params.version))
@@ -104,8 +118,8 @@ impl LalrpopLsp {
     }
 
     /// A helper function to convert an offset to a position.
-    pub fn offset_to_position(file: &LalrpopFile, offset: usize) -> Position {
-        let (line, col) = file.line_col(offset);
+    fn offset_to_position(document: &ParsedDocument, offset: usize) -> Position {
+        let (line, col) = document.file.line_col(offset);
         Position {
             line: line as u32,
             character: col as u32,
@@ -132,32 +146,15 @@ impl LanguageServer for LalrpopLsp {
                     file_operations: None,
                 }),
                 document_symbol_provider: Some(OneOf::Left(true)),
-                // semantic_tokens_provider: Some(
-                //     SemanticTokensServerCapabilities::SemanticTokensRegistrationOptions(
-                //         SemanticTokensRegistrationOptions {
-                //             text_document_registration_options: {
-                //                 TextDocumentRegistrationOptions {
-                //                     document_selector: Some(vec![DocumentFilter {
-                //                         language: Some("lalrpop".to_string()),
-                //                         scheme: Some("file".to_string()),
-                //                         pattern: None,
-                //                     }]),
-                //                 }
-                //             },
-                //             semantic_tokens_options: SemanticTokensOptions {
-                //                 work_done_progress_options: WorkDoneProgressOptions::default(),
-                //                 legend: SemanticTokensLegend {
-                //                     // token_types: `LEGEND_TYPE`.into(),
-                //                     token_types: [].into(),
-                //                     token_modifiers: vec![],
-                //                 },
-                //                 range: Some(true),
-                //                 full: Some(SemanticTokensFullOptions::Bool(true)),
-                //             },
-                //             static_registration_options: StaticRegistrationOptions::default(),
-                //         },
-                //     ),
-                // ),
+                semantic_tokens_provider: Some(
+                    SemanticTokensServerCapabilities::SemanticTokensOptions(
+                        SemanticTokensOptions {
+                            legend: semantic_tokens::legend(),
+                            full: Some(SemanticTokensFullOptions::Bool(true)),
+                            ..Default::default()
+                        },
+                    ),
+                ),
                 ..Default::default()
             },
             ..Default::default()
@@ -198,7 +195,8 @@ impl LanguageServer for LalrpopLsp {
             .log_message(MessageType::INFO, "file saved!")
             .await;
     }
-    async fn did_close(&self, _: DidCloseTextDocumentParams) {
+    async fn did_close(&self, params: DidCloseTextDocumentParams) {
+        self.files.remove(params.text_document.uri.as_str());
         self.client
             .log_message(MessageType::INFO, "file closed!")
             .await;
@@ -209,16 +207,17 @@ impl LanguageServer for LalrpopLsp {
         params: GotoDefinitionParams,
     ) -> Result<Option<GotoDefinitionResponse>> {
         let uri = params.text_document_position_params.text_document.uri;
-        let Some(file) = self.files.get(uri.as_str()) else {
+        let Some(document) = self.files.get(uri.as_str()) else {
             return Ok(None);
         };
         let position = params.text_document_position_params.position;
-        let Some(offset) =
-            file.offset_from_line_col(position.line as usize, position.character as usize)
+        let Some(offset) = document
+            .file
+            .offset_from_line_col(position.line as usize, position.character as usize)
         else {
             return Ok(None);
         };
-        let hits = file.hit_offset_in_spans(offset);
+        let hits = document.file.hit_offset_in_spans(offset);
         // self.client
         //     .log_message(
         //         MessageType::INFO,
@@ -232,15 +231,15 @@ impl LanguageServer for LalrpopLsp {
             SpanItem::Grammar => {}
             SpanItem::Definition(def) => {
                 // Todo: actually we return the references here
-                let Some(spans) = file.references.get(&def) else {
+                let Some(spans) = document.file.references.get(&def) else {
                     return Ok(None);
                 };
                 return Ok(Some(GotoDefinitionResponse::Array(
                     spans
-                        .into_iter()
+                        .iter()
                         .map(|span| {
-                            let start = Self::offset_to_position(&file, span.0);
-                            let end = Self::offset_to_position(&file, span.1);
+                            let start = Self::offset_to_position(document.value(), span.0);
+                            let end = Self::offset_to_position(document.value(), span.1);
                             Location {
                                 uri: uri.to_owned(),
                                 range: Range { start, end },
@@ -250,11 +249,11 @@ impl LanguageServer for LalrpopLsp {
                 )));
             }
             SpanItem::Reference(def) => {
-                let Some(span) = file.definitions.get(&def) else {
+                let Some(span) = document.file.definitions.get(&def) else {
                     return Ok(None);
                 };
-                let start = Self::offset_to_position(&file, span.0);
-                let end = Self::offset_to_position(&file, span.1);
+                let start = Self::offset_to_position(document.value(), span.0);
+                let end = Self::offset_to_position(document.value(), span.1);
                 return Ok(Some(GotoDefinitionResponse::Scalar(Location {
                     uri,
                     range: Range { start, end },
@@ -266,16 +265,17 @@ impl LanguageServer for LalrpopLsp {
 
     async fn references(&self, params: ReferenceParams) -> Result<Option<Vec<Location>>> {
         let uri = params.text_document_position.text_document.uri;
-        let Some(file) = self.files.get(uri.as_str()) else {
+        let Some(document) = self.files.get(uri.as_str()) else {
             return Ok(None);
         };
         let position = params.text_document_position.position;
-        let Some(offset) =
-            file.offset_from_line_col(position.line as usize, position.character as usize)
+        let Some(offset) = document
+            .file
+            .offset_from_line_col(position.line as usize, position.character as usize)
         else {
             return Ok(None);
         };
-        let hits = file.hit_offset_in_spans(offset);
+        let hits = document.file.hit_offset_in_spans(offset);
         // self.client
         //     .log_message(
         //         MessageType::INFO,
@@ -289,15 +289,15 @@ impl LanguageServer for LalrpopLsp {
             SpanItem::Grammar => {}
             SpanItem::Reference(_) => {}
             SpanItem::Definition(def) => {
-                let Some(spans) = file.references.get(&def) else {
+                let Some(spans) = document.file.references.get(&def) else {
                     return Ok(None);
                 };
                 return Ok(Some(
                     spans
-                        .into_iter()
+                        .iter()
                         .map(|span| {
-                            let start = Self::offset_to_position(&file, span.0);
-                            let end = Self::offset_to_position(&file, span.1);
+                            let start = Self::offset_to_position(document.value(), span.0);
+                            let end = Self::offset_to_position(document.value(), span.1);
                             Location {
                                 uri: uri.to_owned(),
                                 range: Range { start, end },
@@ -312,16 +312,17 @@ impl LanguageServer for LalrpopLsp {
 
     async fn hover(&self, params: HoverParams) -> Result<Option<Hover>> {
         let uri = params.text_document_position_params.text_document.uri;
-        let Some(file) = self.files.get(uri.as_str()) else {
+        let Some(document) = self.files.get(uri.as_str()) else {
             return Ok(None);
         };
         let position = params.text_document_position_params.position;
-        let Some(offset) =
-            file.offset_from_line_col(position.line as usize, position.character as usize)
+        let Some(offset) = document
+            .file
+            .offset_from_line_col(position.line as usize, position.character as usize)
         else {
             return Ok(None);
         };
-        let hits = file.hit_offset_in_spans(offset);
+        let hits = document.file.hit_offset_in_spans(offset);
         // self.client
         //     .log_message(
         //         MessageType::INFO,
@@ -334,12 +335,13 @@ impl LanguageServer for LalrpopLsp {
         match span_item {
             SpanItem::Grammar => {}
             SpanItem::Definition(def) | SpanItem::Reference(def) => {
-                let Some(TypeDecl { args, ret }) = file.definition_type_decls.get(&def) else {
+                let Some(TypeDecl { args, ret }) = document.file.definition_type_decls.get(&def)
+                else {
                     return Ok(None);
                 };
                 let type_decl = format!(
                     "{}{}",
-                    if args.len() > 0 {
+                    if !args.is_empty() {
                         format!("<{}>", args.join(", "))
                     } else {
                         "".to_string()
@@ -352,8 +354,8 @@ impl LanguageServer for LalrpopLsp {
                     value: format!("```LALRPOP\n{}{}\n```", def, type_decl),
                 });
                 let range = {
-                    let start = Self::offset_to_position(&file, span.0);
-                    let end = Self::offset_to_position(&file, span.1);
+                    let start = Self::offset_to_position(document.value(), span.0);
+                    let end = Self::offset_to_position(document.value(), span.1);
                     Range { start, end }
                 };
                 return Ok(Some(Hover {
@@ -369,14 +371,14 @@ impl LanguageServer for LalrpopLsp {
         params: DocumentSymbolParams,
     ) -> Result<Option<DocumentSymbolResponse>> {
         let uri = params.text_document.uri;
-        let Some(file) = self.files.get(uri.as_str()) else {
+        let Some(document) = self.files.get(uri.as_str()) else {
             return Ok(None);
         };
         let mut symbols = vec![];
-        for (def, span) in &file.definitions {
+        for (def, span) in &document.file.definitions {
             let range = {
-                let start = Self::offset_to_position(&file, span.0);
-                let end = Self::offset_to_position(&file, span.1);
+                let start = Self::offset_to_position(document.value(), span.0);
+                let end = Self::offset_to_position(document.value(), span.1);
                 Range { start, end }
             };
             #[allow(deprecated)]
@@ -392,6 +394,22 @@ impl LanguageServer for LalrpopLsp {
             });
         }
         Ok(Some(DocumentSymbolResponse::Nested(symbols)))
+    }
+
+    async fn semantic_tokens_full(
+        &self,
+        params: SemanticTokensParams,
+    ) -> Result<Option<SemanticTokensResult>> {
+        let data = self
+            .files
+            .get(params.text_document.uri.as_str())
+            .map(|document| semantic_tokens::full(&document.text, &document.file))
+            .unwrap_or_default();
+
+        Ok(Some(SemanticTokensResult::Tokens(SemanticTokens {
+            result_id: None,
+            data,
+        })))
     }
 }
 

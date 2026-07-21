@@ -28,5 +28,19 @@ If Zed cannot find the server on `PATH`, configure an explicit path:
 }
 ```
 
+Zed disables language-server semantic tokens by default. To overlay semantic
+highlighting on the Tree-sitter syntax highlighting, enable combined tokens for
+LALRPOP in `settings.json`:
+
+```json
+{
+  "languages": {
+    "LALRPOP": {
+      "semantic_tokens": "combined"
+    }
+  }
+}
+```
+
 See the [project README](../../README.md) for repository-wide development
 instructions.
