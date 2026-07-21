@@ -1,0 +1,8 @@
+.vscode/**
+node_modules/**
+src/**
+dist/*.map
+*.vsix
+pnpm-lock.yaml
+pnpm-workspace.yaml
+tsconfig.json

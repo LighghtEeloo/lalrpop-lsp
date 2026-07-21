@@ -1,7 +1,7 @@
 {
   "name": "lalrpop-language-server",
   "displayName": "LALRPOP Language Server",
-  "description": "LSP support for LALRPOP",
+  "description": "Language Server Protocol support for LALRPOP grammars",
   "license": "MIT",
   "version": "0.0.10",
   "keywords": [
@@ -22,7 +22,7 @@
   },
   "enabledApiProposals": [],
   "activationEvents": [
-    "onLanguage:LALRPOP"
+    "onLanguage:lalrpop"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -68,40 +68,31 @@
           ],
           "default": "off",
           "description": "Traces the communication between VS Code and the LALRPOP language server."
+        },
+        "lalrpop-language-server.server.path": {
+          "type": "string",
+          "scope": "machine",
+          "default": "",
+          "description": "Path to the lalrpop-lsp executable. When empty, the extension searches PATH and can install the server with Cargo."
         }
       }
     }
   },
   "scripts": {
-    "postinstall": "cd client && pnpm i",
-    "esbuild-base": "esbuild ./client/src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
-    "vscode:prepublish": "npm run esbuild-base -- --minify",
-    "test-compile": "tsc -p ./",
-    "compile": "cross-env NODE_ENV=production tsc -b",
-    "watch": "rm -rf dist && tsc -b -w",
-    "lint": "eslint src --ext ts",
-    "pretest": "npm run compile && npm run lint",
-    "build": "webpack --config webpack.config.js",
+    "check": "tsc --noEmit",
+    "bundle": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap",
+    "compile": "pnpm run check && pnpm run bundle",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --sourcemap --watch",
+    "vscode:prepublish": "pnpm run check && esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
     "package": "vsce package --no-dependencies",
     "publish": "vsce publish --no-dependencies"
   },
   "devDependencies": {
-    "@electron/rebuild": "^3.7.1",
-    "@types/glob": "^8.1.0",
-    "@types/mocha": "^10.0.10",
     "@types/node": "^22.13.1",
-    "@typescript-eslint/eslint-plugin": "^8.23.0",
-    "@typescript-eslint/parser": "^8.23.0",
-    "@vscode/test-electron": "^2.4.1",
-    "cross-env": "^7.0.3",
+    "@types/which": "3.0.4",
+    "@types/vscode": "1.86.0",
     "esbuild": "0.24.0",
-    "eslint": "^9.19.0",
-    "glob": "^11.0.1",
-    "mocha": "^11.1.0",
-    "typescript": "5.4.5",
-    "vscode-uri": "^3.1.0",
-    "webpack": "^5.97.1",
-    "webpack-cli": "^6.0.1"
+    "typescript": "5.4.5"
   },
   "dependencies": {
     "vscode-languageclient": "9.0.1",

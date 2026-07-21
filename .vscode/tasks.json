@@ -1,53 +1,29 @@
-// See https://go.microsoft.com/fwlink/?LinkId=733558
-// for the documentation about the tasks.json format
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"type": "npm",
-			"script": "compile",
-			"group": "build",
-			"presentation": {
-				"panel": "dedicated",
-				"reveal": "never"
-			},
-			"problemMatcher": [
-				"$tsc"
-			]
-		},
-		{
-			"type": "npm",
-			"script": "watch",
-			"isBackground": true,
-			"group": {
-				"kind": "build",
-				"isDefault": true
-			},
-			"presentation": {
-				"panel": "dedicated",
-				"reveal": "never"
-			},
-			"problemMatcher": [
-				"$tsc-watch"
-			]
-		},
-		{
-			"label": "cargo build",
-			"type": "shell",
-			"command": "cargo build",
-			"problemMatcher": [
-				"$rustc"
-			]
-		},
-		{
-			"label": "cargo build and npm watch",
-			"dependsOn": [
-				"cargo build",
-				{
-					"type": "npm",
-					"script": "watch",
-				}
-			],
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build language server",
+      "type": "shell",
+      "command": "cargo build",
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "build VS Code client",
+      "type": "shell",
+      "command": "pnpm run compile",
+      "options": {
+        "cwd": "${workspaceFolder}/editors/vscode"
+      },
+      "problemMatcher": ["$tsc"]
+    },
+    {
+      "label": "build all",
+      "dependsOrder": "parallel",
+      "dependsOn": ["build language server", "build VS Code client"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    }
+  ]
 }

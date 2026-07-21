@@ -1,8 +1,10 @@
-/target
-node_modules
-out/
+**/target/
+**/node_modules/
+**/dist/
+**/out/
+editors/zed/grammars/
 .pnpm-debug.log
-*.ast 
-dist/
+*.ast
 *.vsix
+*.wasm
 tsconfig.tsbuildinfo

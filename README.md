@@ -1,55 +1,105 @@
 # LALRPOP language server
 
-This repo holds a language server for [LALRPOP](https://github.com/lalrpop/lalrpop), an LR(1) parser generator for Rust.
+`lalrpop-lsp` provides Language Server Protocol support for
+[LALRPOP](https://github.com/lalrpop/lalrpop), an LR(1) parser generator for
+Rust. The language server communicates over standard input/output and is shared
+by the VS Code and Zed integrations in this repository.
 
-## Installation
-Install the extension from the [VSCode Marketplace](https://marketplace.visualstudio.com/items?itemName=LitiaEeloo.lalrpop-language-server).
-The first cold start up will be **slow** because the extension will try to install the language server binary through `cargo` if it doesn't see `lalrpop-lsp` in `PATH`. You can always remove the downloaded binary by running `cargo uninstall lalrpop-lsp` and switch to a manually downloaded version.
+## Repository layout
 
-## Head's up (!)
+- `src/` contains the editor-independent Rust language server.
+- `editors/vscode/` contains the VS Code extension, TextMate grammar, and
+  TypeScript client.
+- `editors/zed/` contains the Zed WASM adapter and Tree-sitter language files.
 
-This extension is still in active development, so please report any issue you encounter [here](https://github.com/LighghtEeloo/lalrpop-lsp/issues).
+## Install the language server
 
-## Features
+Both editors can run a `lalrpop-lsp` executable already available on `PATH`:
 
-<!--
-- [ ] Semantic tokenization
-make sure your semantic token is enabled, you could enable your `semantic token` by
-adding this line  to your `settings.json`
+```sh
+cargo install --git https://github.com/LighghtEeloo/lalrpop-lsp.git --locked
+```
+
+## VS Code
+
+Install [LALRPOP Language Server](https://marketplace.visualstudio.com/items?itemName=LitiaEeloo.lalrpop-language-server)
+from the VS Code Marketplace. If `lalrpop-lsp` is not available on `PATH`, the
+extension offers to install it with Cargo on first use.
+
+To use a specific server build, set `lalrpop-language-server.server.path` in VS
+Code settings.
+
+## Zed
+
+Until the extension is published in Zed's extension registry, install it as a
+development extension:
+
+1. Install `lalrpop-lsp` with the command above.
+2. Run `zed: install dev extension` from Zed's command palette.
+3. Select the `editors/zed` directory from this checkout.
+
+If the Zed process cannot see the server on `PATH`, set an explicit binary path
+in Zed's `settings.json`:
+
 ```json
 {
- "editor.semanticHighlighting.enabled": true,
+  "lsp": {
+    "lalrpop-lsp": {
+      "binary": {
+        "path": "/absolute/path/to/lalrpop-lsp"
+      }
+    }
+  }
 }
 ```
 
-- [ ] Syntactic error diagnostic
+## Features
 
-- [ ] Code completion
--->
+- Go to definition
+- Find references
+- Hover information
+- Document symbols
+- Syntax error diagnostics
+- Syntax highlighting in both editors
 
-- [Go to Definition](https://github.com/user-attachments/assets/e20bfdf5-6e0d-4d97-99fc-4ab06db0ddd2)
+## Development
 
-- [Find References](https://github.com/user-attachments/assets/978cc716-eae6-48d6-828c-7f273982a4aa)
+Build and test the language server from the repository root:
 
-- [Hover](https://github.com/user-attachments/assets/38055a83-8d9d-489a-ace9-979337a635ac)
+```sh
+cargo test
+```
 
-- [Error Diagnostics](https://github.com/user-attachments/assets/6f1ca1e4-d51e-4245-a8e9-f5e6b3ce68a0)
+Build the VS Code extension:
 
+```sh
+cd editors/vscode
+pnpm install
+pnpm run compile
+```
 
-## Development using VSCode
-1. `pnpm i`
-2. `cargo build`
-3. Open the project in VSCode: `code .`
-4. In VSCode, press <kbd>F5</kbd> or change to the Debug panel and click <kbd>Launch Client</kbd>.
-5. In the newly launched VSCode instance, open a folder that contains a lalrpop file.
-6. If the LSP is working correctly you should see syntax highlighting and the features described below should work.
-> **Note**  
-> 
-> If encountered errors like `Cannot find module '/xxx/xxx/dist/extension.js'`
-> please try run command `tsc -b` manually, you could refer https://github.com/IWANABETHATGUY/tower-lsp-boilerplate/issues/6 for more details
+You can then open the repository in VS Code and run the `Launch VS Code Client`
+debug configuration.
+
+Check the Zed adapter with:
+
+```sh
+cargo check --manifest-path editors/zed/Cargo.toml
+```
+
+Zed compiles the adapter to WebAssembly when `editors/zed` is installed as a
+development extension. The language definition uses
+[`tree-sitter-lalrpop`](https://github.com/traxys/tree-sitter-lalrpop) for
+syntax-aware editor features.
+
+## Project status
+
+This project is under active development. Please report issues in the
+[GitHub issue tracker](https://github.com/LighghtEeloo/lalrpop-lsp/issues).
 
 ## Credits
 
-The project is powered by [Language Server Protocol](https://microsoft.github.io/language-server-protocol) [implementation](https://github.com/ebkalderon/tower-lsp) for Rust based on [Tower](https://github.com/tower-rs/tower).
-It's also based on [tower-lsp-boilerplate](https://github.com/IWANABETHATGUY/tower-lsp-boilerplate), a useful github project template which makes writing new language servers easier.
-The syntax highlighting is provided by [LALRPOP syntax highlighting for VS Code](https://github.com/guyutongxue/VSC_LalrpopHighlight?tab=readme-ov-file) by [guyutongxue](https://github.com/guyutongxue).
+The server uses [Tower LSP](https://github.com/ebkalderon/tower-lsp) and is based
+on [tower-lsp-boilerplate](https://github.com/IWANABETHATGUY/tower-lsp-boilerplate).
+The VS Code TextMate grammar originated in
+[VSC_LalrpopHighlight](https://github.com/guyutongxue/VSC_LalrpopHighlight).
