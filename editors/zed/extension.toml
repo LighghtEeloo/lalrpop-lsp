@@ -1,14 +1,15 @@
 id = "lalrpop"
 name = "LALRPOP"
-version = "0.1.0"
+version = "0.1.1"
 schema_version = 1
 authors = ["LighghtEeloo"]
 description = "LALRPOP grammar support powered by lalrpop-lsp"
 repository = "https://github.com/LighghtEeloo/lalrpop-lsp"
 
 [grammars.lalrpop]
-repository = "https://github.com/traxys/tree-sitter-lalrpop"
-rev = "27b0f7bb55b4cabd8f01a933d9ee6a49dbfc2192"
+repository = "https://github.com/LighghtEeloo/lalrpop-lsp"
+rev = "fc5512fb3150cbe1f8324dedc5f92dc1e74fc938"
+path = "grammars/lalrpop"
 
 [language_servers.lalrpop-lsp]
 name = "LALRPOP Language Server"

@@ -11,7 +11,10 @@ cargo install --git https://github.com/LighghtEeloo/lalrpop-lsp.git --locked
 ```
 
 For local development, run `zed: install dev extension` and select this
-directory. If Zed cannot find the server on `PATH`, configure an explicit path:
+directory. After changing the grammar or language queries, run
+`zed: rebuild dev extension` from the command palette.
+
+If Zed cannot find the server on `PATH`, configure an explicit path:
 
 ```json
 {

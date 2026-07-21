@@ -8,6 +8,8 @@ by the VS Code and Zed integrations in this repository.
 ## Repository layout
 
 - `src/` contains the editor-independent Rust language server.
+- `grammars/lalrpop/` contains the patched Tree-sitter grammar used by the Zed
+  integration.
 - `editors/vscode/` contains the VS Code extension, TextMate grammar, and
   TypeScript client.
 - `editors/zed/` contains the Zed WASM adapter and Tree-sitter language files.
@@ -87,8 +89,20 @@ Check the Zed adapter with:
 cargo check --manifest-path editors/zed/Cargo.toml
 ```
 
+Validate the vendored Tree-sitter grammar with:
+
+```sh
+cd grammars/lalrpop
+pnpm dlx tree-sitter-cli@0.25.10 test
+```
+
+After changing the grammar, commit `grammars/lalrpop` first and update the
+grammar revision in `editors/zed/extension.toml` to that commit's full hash.
+Run `zed: rebuild dev extension` to compile and reload the changed grammar.
+
 Zed compiles the adapter to WebAssembly when `editors/zed` is installed as a
 development extension. The language definition uses
+a patched vendored copy of
 [`tree-sitter-lalrpop`](https://github.com/traxys/tree-sitter-lalrpop) for
 syntax-aware editor features.
 
