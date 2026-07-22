@@ -8,7 +8,7 @@ repository = "https://github.com/LighghtEeloo/lalrpop-lsp"
 
 [grammars.lalrpop]
 repository = "https://github.com/LighghtEeloo/lalrpop-lsp"
-rev = "fc5512fb3150cbe1f8324dedc5f92dc1e74fc938"
+rev = "930d43ffbc29db79db7692fe4fa4c159a0339e24"
 path = "grammars/lalrpop"
 
 [language_servers.lalrpop-lsp]
