@@ -10,6 +10,8 @@ by the VS Code and Zed integrations in this repository.
 - `src/` contains the editor-independent Rust language server.
 - `grammars/lalrpop/` contains the patched Tree-sitter grammar used by the Zed
   integration.
+- `grammars/lalrpop-rust/` contains the pinned Rust-expression dialect used for
+  LALRPOP action blocks in Zed.
 - `editors/vscode/` contains the VS Code extension, TextMate grammar, and
   TypeScript client.
 - `editors/zed/` contains the Zed WASM adapter and Tree-sitter language files.
@@ -99,15 +101,24 @@ cd grammars/lalrpop
 pnpm dlx tree-sitter-cli@0.25.10 test
 ```
 
-After changing the grammar, commit `grammars/lalrpop` first and update the
-grammar revision in `editors/zed/extension.toml` to that commit's full hash.
-Run `zed: rebuild dev extension` to compile and reload the changed grammar.
+Validate the injected Rust action grammar with:
+
+```sh
+cd grammars/lalrpop-rust
+pnpm dlx tree-sitter-cli@0.25.10 test
+```
+
+After changing either grammar, commit `grammars/lalrpop` and
+`grammars/lalrpop-rust` first, then update both grammar revisions in
+`editors/zed/extension.toml` to that commit's full hash. Run
+`zed: rebuild dev extension` to compile and reload the changed grammars.
 
 Zed compiles the adapter to WebAssembly when `editors/zed` is installed as a
-development extension. The language definition uses
-a patched vendored copy of
+development extension. The language definition uses a patched vendored copy of
 [`tree-sitter-lalrpop`](https://github.com/traxys/tree-sitter-lalrpop) for
-syntax-aware editor features.
+syntax-aware editor features. Rust action bodies are parsed as expressions by a
+small dialect of Zed's pinned `tree-sitter-rust`; the dialect adds LALRPOP's
+`<>` placeholder while retaining Zed's native Rust highlight captures.
 
 ## Project status
 
