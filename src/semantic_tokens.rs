@@ -3,6 +3,8 @@ use tower_lsp::lsp_types::{
     SemanticToken, SemanticTokenModifier, SemanticTokenType, SemanticTokensLegend,
 };
 
+use crate::line_index::LineIndex;
+
 const FUNCTION_TOKEN: u32 = 0;
 const MACRO_TOKEN: u32 = 1;
 const DECLARATION_MODIFIER: u32 = 1 << 0;
@@ -23,11 +25,16 @@ pub fn legend() -> SemanticTokensLegend {
     }
 }
 
-pub fn full(text: &str, file: &LalrpopFile) -> Vec<SemanticToken> {
+pub fn full_mapped(
+    text: &str,
+    line_index: &LineIndex,
+    file: &LalrpopFile,
+    mut map_span: impl FnMut(Span) -> Option<Span>,
+) -> Vec<SemanticToken> {
     let mut tokens: Vec<_> = file
         .span_items
         .iter()
-        .filter_map(|(span, item)| absolute_token(text, file, *span, item))
+        .filter_map(|(span, item)| absolute_token(text, line_index, file, map_span(*span)?, item))
         .collect();
     tokens.sort_unstable();
     tokens.dedup();
@@ -36,6 +43,7 @@ pub fn full(text: &str, file: &LalrpopFile) -> Vec<SemanticToken> {
 
 fn absolute_token(
     text: &str,
+    line_index: &LineIndex,
     file: &LalrpopFile,
     span: Span,
     item: &SpanItem,
@@ -59,13 +67,11 @@ fn absolute_token(
     let start_offset = name_offset(text, span, name)?;
     let end_offset = start_offset.checked_add(name.len())?;
     let token_text = text.get(start_offset..end_offset)?;
-    let (line, byte_column) = file.line_col(start_offset);
-    let line_start = start_offset.checked_sub(byte_column)?;
-    let line_prefix = text.get(line_start..start_offset)?;
+    let position = line_index.position(text, start_offset)?;
 
     Some(AbsoluteToken {
-        line: u32::try_from(line).ok()?,
-        start: u32::try_from(line_prefix.encode_utf16().count()).ok()?,
+        line: position.line,
+        start: position.character,
         length: u32::try_from(token_text.encode_utf16().count()).ok()?,
         token_type,
         token_modifiers_bitset,
@@ -124,6 +130,10 @@ mod tests {
         }
     }
 
+    fn full(text: &str, file: &LalrpopFile) -> Vec<SemanticToken> {
+        full_mapped(text, &LineIndex::new(text), file, Some)
+    }
+
     fn decode(tokens: &[SemanticToken]) -> Vec<(u32, u32, u32, u32, u32)> {
         let mut line = 0;
         let mut start = 0;
@@ -176,6 +186,28 @@ mod tests {
                 (1, 0, 5, FUNCTION_TOKEN, DECLARATION_MODIFIER),
                 (1, 18, 4, FUNCTION_TOKEN, 0),
                 (2, 0, 4, FUNCTION_TOKEN, DECLARATION_MODIFIER),
+            ]
+        );
+    }
+
+    #[test]
+    fn mapped_tokens_use_current_text_positions() {
+        let analysis_text = "grammar;\nStart: () = { Atom };\nAtom: () = { => () };\n";
+        let current_text = "?\n\ngrammar;\nStart: () = { Atom };\nAtom: () = { => () };\n";
+        let file = parse(analysis_text);
+        let line_index = LineIndex::new(current_text);
+
+        assert_eq!(
+            decode(&full_mapped(
+                current_text,
+                &line_index,
+                &file,
+                |Span(start, end)| Some(Span(start + 3, end + 3)),
+            )),
+            vec![
+                (3, 0, 5, FUNCTION_TOKEN, DECLARATION_MODIFIER),
+                (3, 14, 4, FUNCTION_TOKEN, 0),
+                (4, 0, 4, FUNCTION_TOKEN, DECLARATION_MODIFIER),
             ]
         );
     }

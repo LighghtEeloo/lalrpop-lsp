@@ -12,3 +12,8 @@ tokio = { version = "1.42.0", features = ["full"] }
 tower-lsp = { version = "0.20.0", features = ["proposed"] }
 dashmap = { version = "6.1" }
 lalrpop = { git = "https://github.com/LighghtEeloo/lalrpop.git", branch = "lsp", features = ["lsp"] }
+
+[dev-dependencies]
+futures = { version = "=0.3.31", default-features = false, features = ["async-await", "std"] }
+serde_json = "1"
+tower = { version = "0.4", features = ["util"] }

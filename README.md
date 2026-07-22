@@ -59,9 +59,11 @@ in Zed's `settings.json`:
 
 - Go to definition
 - Find references
+- Document occurrence highlighting
 - Hover information
 - Document symbols
 - Syntax error diagnostics
+- Navigation and semantic highlighting retained across incomplete edits
 - Syntax highlighting in both editors
 - Semantic highlighting for nonterminal and macro definitions and references
 
