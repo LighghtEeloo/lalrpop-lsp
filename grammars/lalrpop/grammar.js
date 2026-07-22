@@ -18,8 +18,7 @@ module.exports = grammar({
 		$.use,
 		$._string_content,
 		$.regex_literal,
-		$.normal_action,
-		$.failible_action,
+		$.action_code,
 	],
 
 	extras: $ => [/\s/, $.comment],
@@ -258,6 +257,8 @@ module.exports = grammar({
 			$.normal_action,
 			$.failible_action,
 		),
+		normal_action: $ => seq("=>", field("code", $.action_code)),
+		failible_action: $ => seq("=>?", field("code", $.action_code)),
 
 		cond: $ => seq($._not_macro_id, $._cond_op, $.string_literal),
 		_cond_op: $ => choice("==", "!=", "~~", "!~"),

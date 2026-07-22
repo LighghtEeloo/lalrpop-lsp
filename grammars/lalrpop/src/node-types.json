@@ -315,6 +315,22 @@
     }
   },
   {
+    "type": "failible_action",
+    "named": true,
+    "fields": {
+      "code": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "action_code",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "fn_type",
     "named": true,
     "fields": {},
@@ -663,6 +679,22 @@
           "named": true
         }
       ]
+    }
+  },
+  {
+    "type": "normal_action",
+    "named": true,
+    "fields": {
+      "code": {
+        "multiple": false,
+        "required": true,
+        "types": [
+          {
+            "type": "action_code",
+            "named": true
+          }
+        ]
+      }
     }
   },
   {
@@ -1042,6 +1074,14 @@
     "named": false
   },
   {
+    "type": "=>",
+    "named": false
+  },
+  {
+    "type": "=>?",
+    "named": false
+  },
+  {
     "type": "=>@L",
     "named": false
   },
@@ -1068,6 +1108,10 @@
   {
     "type": "_",
     "named": false
+  },
+  {
+    "type": "action_code",
+    "named": true
   },
   {
     "type": "comment",
@@ -1101,10 +1145,6 @@
   {
     "type": "extern",
     "named": false
-  },
-  {
-    "type": "failible_action",
-    "named": true
   },
   {
     "type": "for",
@@ -1144,10 +1184,6 @@
   },
   {
     "type": "mut",
-    "named": true
-  },
-  {
-    "type": "normal_action",
     "named": true
   },
   {

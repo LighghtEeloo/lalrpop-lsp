@@ -1,0 +1,45 @@
+==================
+Rust-aware action boundaries
+==================
+
+grammar;
+
+Start: () = {
+    => call("escaped \"),", value),
+    => call(r##"("#""##, value),
+    => (value /* ) /* nested */ } */),
+    => call(// (
+        value),
+    =>? Result::<()>::Ok(<>),
+};
+
+---
+
+(source_file
+  (grammar
+    (grammar_item
+      (nonterminal
+        (nonterminal_name
+          (identifier))
+        (type_ref
+          (tuple_type))
+        (alternative
+          (action
+            (normal_action
+              code: (action_code))))
+        (alternative
+          (action
+            (normal_action
+              code: (action_code))))
+        (alternative
+          (action
+            (normal_action
+              code: (action_code))))
+        (alternative
+          (action
+            (normal_action
+              code: (action_code))))
+        (alternative
+          (action
+            (failible_action
+              code: (action_code))))))))

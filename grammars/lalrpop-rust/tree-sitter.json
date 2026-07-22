@@ -1,0 +1,21 @@
+{
+  "grammars": [
+    {
+      "name": "lalrpop_rust",
+      "camelcase": "LalrpopRust",
+      "scope": "source.lalrpop-rust",
+      "path": "."
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Rust expression grammar for LALRPOP action blocks",
+    "links": {
+      "repository": "https://github.com/LighghtEeloo/lalrpop-lsp"
+    }
+  },
+  "bindings": {
+    "c": true
+  }
+}

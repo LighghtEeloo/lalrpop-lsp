@@ -37,4 +37,5 @@ Sequence<Start, T>: Vec<T> = Start <mut values:T*> => values;
                   (identifier))
                 (repeat))))
           (action
-            (normal_action)))))))
+            (normal_action
+              code: (action_code))))))))

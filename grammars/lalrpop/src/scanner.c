@@ -9,8 +9,7 @@
 	enum TokenType { __VA_ARGS__ };                                            \
 	const enum TokenType variants[] = { __VA_ARGS__ };
 
-SYMBOLS(MACRO_ID, USE, STRING_CONTENT, REGEX_LITERAL, NORMAL_ACTION,
-        FAILIBLE_ACTION)
+SYMBOLS(MACRO_ID, USE, STRING_CONTENT, REGEX_LITERAL, ACTION_CODE)
 
 #define for_each_symbol(var)                                                   \
 	for (int i = 0, (var) = variants[0];                                       \
@@ -68,27 +67,23 @@ static void advance(TSLexer *lexer) {
 
 static bool string_literal(TSLexer *lexer, char quote) {
 	bool escape = false;
-	bool terminate = false;
 
 	for (;;) {
 		if (lexer->lookahead == 0) {
 			return false;
 		}
-		if (lexer->lookahead == quote) {
+
+		if (escape) {
+			escape = false;
+		} else if (lexer->lookahead == '\\') {
+			escape = true;
+		} else if (lexer->lookahead == quote) {
 			advance(lexer);
 			return true;
 		}
 
-		if (escape) {
-			escape = false;
-		} else {
-			escape = lexer->lookahead == '\\';
-		}
-
 		advance(lexer);
 	}
-
-	return false;
 }
 
 static bool take_until_terminating(TSLexer *lexer, char terminator) {
@@ -120,8 +115,75 @@ static bool lifetime_or_char_literal(TSLexer *lexer) {
 		advance(lexer); // it was a char literal, Consume the quote
 	}
 	return true;
+}
 
-	return true;
+// Scan the remainder of a Rust raw string after its leading `r`. If the
+// following characters do not form a raw-string opener, they are simply part
+// of ordinary Rust code (for example, a raw identifier).
+static bool raw_string_literal(TSLexer *lexer) {
+	size_t hash_count = 0;
+	while (lexer->lookahead == '#') {
+		hash_count++;
+		advance(lexer);
+	}
+
+	if (lexer->lookahead != '"') {
+		return true;
+	}
+	advance(lexer);
+
+	for (;;) {
+		if (lexer->lookahead == 0) {
+			return false;
+		}
+
+		if (lexer->lookahead != '"') {
+			advance(lexer);
+			continue;
+		}
+
+		advance(lexer);
+		if (hash_count == 0) {
+			return true;
+		}
+
+		size_t closing_hash_count = 0;
+		while (lexer->lookahead == '#' &&
+		       closing_hash_count < hash_count) {
+			closing_hash_count++;
+			advance(lexer);
+		}
+		if (closing_hash_count == hash_count) {
+			return true;
+		}
+	}
+}
+
+// Rust block comments nest. Matching them here keeps delimiters in comments
+// from prematurely ending the surrounding LALRPOP action.
+static bool block_comment(TSLexer *lexer) {
+	size_t depth = 1;
+	int32_t previous = 0;
+
+	while (lexer->lookahead != 0) {
+		int32_t current = lexer->lookahead;
+		advance(lexer);
+
+		if (previous == '/' && current == '*') {
+			depth++;
+			previous = 0;
+		} else if (previous == '*' && current == '/') {
+			depth--;
+			if (depth == 0) {
+				return true;
+			}
+			previous = 0;
+		} else {
+			previous = current;
+		}
+	}
+
+	return false;
 }
 
 static bool unicode_strchr(const char *str, int32_t chr) {
@@ -155,15 +217,21 @@ static bool code(TSLexer *lexer, const char *open_delims,
 			continue;
 		case 'r':
 			advance(lexer);
-			if (lexer->lookahead == '#') {
-				return false;
-				/* abort(); */
+			if (lexer->lookahead == '#' || lexer->lookahead == '"') {
+				if (!raw_string_literal(lexer)) {
+					return false;
+				}
 			}
 			continue;
 		case '/':
 			advance(lexer);
 			if (lexer->lookahead == '/') {
 				take_until_terminating(lexer, '\n');
+			} else if (lexer->lookahead == '*') {
+				advance(lexer);
+				if (!block_comment(lexer)) {
+					return false;
+				}
 			}
 			continue;
 		case 0:
@@ -293,30 +361,14 @@ bool tree_sitter_lalrpop_external_scanner_scan(void *payload, TSLexer *lexer,
 		lexer->advance(lexer, true);
 	}
 
-	if (valid_symbols[NORMAL_ACTION] && lexer->lookahead == '=') {
-		advance(lexer);
-		lexer->result_symbol = NORMAL_ACTION;
-
-		if (lexer->lookahead != '>') {
+	if (valid_symbols[ACTION_CODE]) {
+		if (lexer->lookahead == 0 || lexer->lookahead == ',' ||
+		    lexer->lookahead == ';' || lexer->lookahead == '}' ||
+		    lexer->lookahead == ']' || lexer->lookahead == ')') {
 			goto string_content;
 		}
 
-		advance(lexer);
-
-		if (lexer->lookahead == '?') {
-			lexer->result_symbol = FAILIBLE_ACTION;
-			advance(lexer);
-		}
-
-		// =>@R or =>@L
-		if (lexer->lookahead == '@') {
-			goto string_content;
-		}
-
-		while (iswspace(lexer->lookahead)) {
-			lexer->advance(lexer, true);
-		}
-
+		lexer->result_symbol = ACTION_CODE;
 		if (code(lexer, "([{", "}])")) {
 			return true;
 		}

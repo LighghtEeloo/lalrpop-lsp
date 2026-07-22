@@ -1,0 +1,71 @@
+==================
+Placeholder method call
+==================
+
+<>.into()
+
+---
+
+(source_file
+  action: (call_expression
+    function: (field_expression
+      value: (lalrpop_placeholder)
+      field: (field_identifier))
+    arguments: (arguments)))
+
+==================
+Wrapped placeholder method call
+==================
+
+Thunk(<>).into()
+
+---
+
+(source_file
+  action: (call_expression
+    function: (field_expression
+      value: (call_expression
+        function: (identifier)
+        arguments: (arguments
+          (lalrpop_placeholder)))
+      field: (field_identifier))
+    arguments: (arguments)))
+
+==================
+Struct shorthand placeholder
+==================
+
+Node { <> }
+
+---
+
+(source_file
+  action: (struct_expression
+    name: (type_identifier)
+    body: (field_initializer_list
+      (shorthand_field_initializer
+        (lalrpop_placeholder)))))
+
+==================
+Nested placeholder
+==================
+
+|value| Result::<Error>::Ok((value, <>))
+
+---
+
+(source_file
+  action: (closure_expression
+    parameters: (closure_parameters
+      (identifier))
+    body: (call_expression
+      function: (scoped_identifier
+        path: (generic_type
+          type: (type_identifier)
+          type_arguments: (type_arguments
+            (type_identifier)))
+        name: (identifier))
+      arguments: (arguments
+        (tuple_expression
+          (identifier)
+          (lalrpop_placeholder))))))

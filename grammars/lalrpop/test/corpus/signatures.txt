@@ -89,4 +89,5 @@ Start: () = { => () };
           (tuple_type))
         (alternative
           (action
-            (normal_action)))))))
+            (normal_action
+              code: (action_code))))))))

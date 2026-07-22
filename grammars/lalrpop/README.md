@@ -11,5 +11,13 @@ when `<` immediately follows the identifier. This matches LALRPOP's lexer and
 prevents adjacent symbols such as `Start <value: T>` from being parsed as a
 single macro invocation.
 
-When updating from upstream, preserve the adjacent-symbol corpus test and run
-`tree-sitter test` before updating the revision used by the Zed extension.
+The scanner also exposes the Rust body of `=>` and `=>?` as a separate
+`action_code` node. Its boundary rules follow LALRPOP's tokenizer: commas,
+semicolons, and closing delimiters terminate a top-level action, while balanced
+delimiters, strings, raw strings, line comments, and nested block comments are
+skipped. Zed injects these nodes into the companion `lalrpop_rust` expression
+grammar.
+
+When updating from upstream, preserve the adjacent-symbol and action-boundary
+corpus tests and run `tree-sitter test` before updating the revision used by the
+Zed extension.
