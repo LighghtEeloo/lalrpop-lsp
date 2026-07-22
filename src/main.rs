@@ -28,6 +28,13 @@ struct ParsedDocument {
     file: LalrpopFile,
 }
 
+fn hover_signature(name: &str, type_decl: &str) -> MarkupContent {
+    MarkupContent {
+        kind: MarkupKind::Markdown,
+        value: format!("```LALRPOP\n{name}{type_decl}\n```"),
+    }
+}
+
 impl LalrpopLsp {
     /// Create a new LALRPOP Language Server Protocol
     pub fn new(client: Client) -> Self {
@@ -339,20 +346,25 @@ impl LanguageServer for LalrpopLsp {
                 else {
                     return Ok(None);
                 };
-                let type_decl = format!(
-                    "{}{}",
-                    if !args.is_empty() {
-                        format!("<{}>", args.join(", "))
-                    } else {
-                        "".to_string()
-                    },
-                    ret.as_ref()
-                        .map_or("".to_string(), |ty| format!(": {}", ty))
-                );
-                let contents = HoverContents::Markup(MarkupContent {
-                    kind: MarkupKind::Markdown,
-                    value: format!("```LALRPOP\n{}{}\n```", def, type_decl),
-                });
+                let definition_name = document
+                    .file
+                    .definitions
+                    .get(&def)
+                    .and_then(|span| document.text.get(span.0..span.1))
+                    .map(str::to_owned)
+                    .unwrap_or_else(|| {
+                        format!(
+                            "{}{}",
+                            def,
+                            if args.is_empty() {
+                                String::new()
+                            } else {
+                                format!("<{}>", args.join(", "))
+                            }
+                        )
+                    });
+                let type_decl = ret.as_ref().map_or(String::new(), |ty| format!(": {ty}"));
+                let contents = HoverContents::Markup(hover_signature(&definition_name, &type_decl));
                 let range = {
                     let start = Self::offset_to_position(document.value(), span.0);
                     let end = Self::offset_to_position(document.value(), span.1);
@@ -421,4 +433,17 @@ async fn main() {
     let stdin = tokio::io::stdin();
     let stdout = tokio::io::stdout();
     Server::new(stdin, stdout, socket).serve(service).await;
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hover_signatures_are_lalrpop_fragments() {
+        let markup = hover_signature("String", ": String");
+
+        assert_eq!(markup.kind, MarkupKind::Markdown);
+        assert_eq!(markup.value, "```LALRPOP\nString: String\n```");
+    }
 }

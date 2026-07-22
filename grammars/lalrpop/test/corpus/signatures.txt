@@ -1,0 +1,92 @@
+==================
+Standalone rule signature
+==================
+
+String: String
+
+---
+
+(source_file
+  (nonterminal_signature
+    (nonterminal_name
+      (identifier))
+    (type_ref
+      (parametrized_type
+        (path
+          (identifier))))))
+
+==================
+Standalone macro signature
+==================
+
+SepBy<T, Sep>: Vec<T>
+
+---
+
+(source_file
+  (nonterminal_signature
+    (nonterminal_name
+      (macro_id)
+      (identifier)
+      (identifier))
+    (type_ref
+      (parametrized_type
+        (path
+          (identifier))
+        (type_ref
+          (parametrized_type
+            (path
+              (identifier))))))))
+
+==================
+Standalone inferred signature
+==================
+
+Start
+
+---
+
+(source_file
+  (nonterminal_signature
+    (nonterminal_name
+      (identifier))))
+
+==================
+Standalone escaped signature
+==================
+
+`type`: String
+
+---
+
+(source_file
+  (nonterminal_signature
+    (nonterminal_name
+      (escape))
+    (type_ref
+      (parametrized_type
+        (path
+          (identifier))))))
+
+==================
+Grammar following use declaration
+==================
+
+use crate::foo;
+grammar;
+Start: () = { => () };
+
+---
+
+(source_file
+  (use)
+  (grammar
+    (grammar_item
+      (nonterminal
+        (nonterminal_name
+          (identifier))
+        (type_ref
+          (tuple_type))
+        (alternative
+          (action
+            (normal_action)))))))

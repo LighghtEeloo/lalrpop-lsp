@@ -647,6 +647,25 @@
     }
   },
   {
+    "type": "nonterminal_signature",
+    "named": true,
+    "fields": {},
+    "children": {
+      "multiple": true,
+      "required": true,
+      "types": [
+        {
+          "type": "nonterminal_name",
+          "named": true
+        },
+        {
+          "type": "type_ref",
+          "named": true
+        }
+      ]
+    }
+  },
+  {
     "type": "parametrized_type",
     "named": true,
     "fields": {},
@@ -723,6 +742,10 @@
       "types": [
         {
           "type": "grammar",
+          "named": true
+        },
+        {
+          "type": "nonterminal_signature",
           "named": true
         },
         {

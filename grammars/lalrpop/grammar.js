@@ -25,9 +25,12 @@ module.exports = grammar({
 	extras: $ => [/\s/, $.comment],
 
 	rules: {
-		source_file: $ => seq(
-			repeat($._use),
-			$.grammar,
+		source_file: $ => choice(
+			seq(
+				repeat($._use),
+				$.grammar,
+			),
+			$.nonterminal_signature,
 		),
 
 		// TODO: annotations
@@ -277,6 +280,11 @@ module.exports = grammar({
 				$.path,
 				")",
 			))
+		),
+
+		nonterminal_signature: $ => seq(
+			$.nonterminal_name,
+			optional(seq(":", $.type_ref)),
 		),
 	}
 });

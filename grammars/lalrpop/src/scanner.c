@@ -248,23 +248,6 @@ static bool is_xid_continue(int32_t chr) {
 	       (chr > 0x7f && xid_continue_extended(chr));
 }
 
-static bool match_word(TSLexer *lexer, const char *word, size_t len) {
-	while (len > 0) {
-		if (lexer->lookahead == *word) {
-			advance(lexer);
-			len--;
-			word++;
-		} else {
-			return false;
-		}
-	}
-
-	return !(is_xid_continue(lexer->lookahead));
-}
-
-#define STRLEN(s) (sizeof(s) - 1)
-#define MATCH_WORD(lex, s) match_word(lex, s, STRLEN(s))
-
 static bool regex_literal(TSLexer *lexer, size_t consumed_hash) {
 	lexer->result_symbol = REGEX_LITERAL;
 
@@ -341,44 +324,70 @@ bool tree_sitter_lalrpop_external_scanner_scan(void *payload, TSLexer *lexer,
 		goto string_content;
 	}
 
-	if (valid_symbols[REGEX_LITERAL] || valid_symbols[MACRO_ID]) {
-		if (lexer->lookahead == 'r') {
-			advance(lexer);
+	if (valid_symbols[REGEX_LITERAL] || valid_symbols[MACRO_ID] ||
+	    valid_symbols[USE]) {
+		static const char use_word[] = "use";
+		bool consumed_initial_r = false;
+		bool raw_identifier = false;
+		bool is_use = valid_symbols[USE];
+		size_t identifier_length = 0;
 
-			if (lexer->lookahead == '"') {
+		if ((valid_symbols[REGEX_LITERAL] || valid_symbols[MACRO_ID]) &&
+		    lexer->lookahead == 'r') {
+			advance(lexer);
+			consumed_initial_r = true;
+			identifier_length = 1;
+			is_use = false;
+
+			if (valid_symbols[REGEX_LITERAL] && lexer->lookahead == '"') {
 				return regex_literal(lexer, 0);
 			}
 			if (lexer->lookahead == '#') {
 				advance(lexer);
-				if (lexer->lookahead == '#' || lexer->lookahead == '"') {
+				if (valid_symbols[REGEX_LITERAL] &&
+				    (lexer->lookahead == '#' || lexer->lookahead == '"')) {
 					return regex_literal(lexer, 1);
 				}
+				raw_identifier = true;
+				identifier_length = 0;
 			}
 		}
 
-		lexer->result_symbol = MACRO_ID;
-
-		// If are here then we are maybe in a macro id, and it could be of the form r#...
-		if (!is_xid_start(lexer->lookahead)) {
+		if (!valid_symbols[MACRO_ID] && !valid_symbols[USE]) {
 			goto string_content;
 		}
 
-		advance(lexer);
-		while (is_xid_continue(lexer->lookahead)) {
-			advance(lexer);
+		if (raw_identifier || !consumed_initial_r) {
+			if (!is_xid_start(lexer->lookahead)) {
+				goto string_content;
+			}
+
+			while (is_xid_continue(lexer->lookahead)) {
+				if (identifier_length >= sizeof(use_word) - 1 ||
+				    lexer->lookahead != use_word[identifier_length]) {
+					is_use = false;
+				}
+				identifier_length++;
+				advance(lexer);
+			}
+		} else {
+			while (is_xid_continue(lexer->lookahead)) {
+				identifier_length++;
+				advance(lexer);
+			}
 		}
 
-		return lexer->lookahead == '<';
-	}
-
-	if (valid_symbols[USE]) {
-		if (!MATCH_WORD(lexer, "use")) {
-			goto string_content;
-		}
-
-		if (code(lexer, "([{", "}])")) {
-			lexer->result_symbol = USE;
+		if (valid_symbols[MACRO_ID] && lexer->lookahead == '<') {
+			lexer->result_symbol = MACRO_ID;
 			return true;
+		}
+
+		if (valid_symbols[USE] && is_use &&
+		    identifier_length == sizeof(use_word) - 1) {
+			if (code(lexer, "([{", "}])")) {
+				lexer->result_symbol = USE;
+				return true;
+			}
 		}
 	}
 
