@@ -20,7 +20,9 @@ const SERVER_REPOSITORY = "https://github.com/LighghtEeloo/lalrpop-lsp.git";
 let client: LanguageClient | undefined;
 
 export async function activate(context: ExtensionContext): Promise<void> {
-  const traceOutputChannel = window.createOutputChannel("LALRPOP Language Server trace");
+  const traceOutputChannel = window.createOutputChannel("LALRPOP Language Server trace", {
+    log: true,
+  });
   context.subscriptions.push(traceOutputChannel);
 
   const configuredPath = workspace
